@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>脑力训练 - 认知训练平台</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- 导航栏 -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <div class="logo">
+        <span class="emoji">🧠</span>
+        <span>脑力训练</span>
+      </div>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link active">首页</a>
+        <a href="category.html?type=memory" class="nav-link">记忆</a>
+        <a href="category.html?type=speed" class="nav-link">速度</a>
+        <a href="category.html?type=attention" class="nav-link">注意力</a>
+        <a href="category.html?type=flexibility" class="nav-link">灵活性</a>
+        <a href="dashboard.html" class="nav-link">📊 看板</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero 区域 -->
+  <section class="hero">
+    <h1 class="hero-title">训练大脑<br>提升 <span class="highlight">认知能力</span></h1>
+    <p class="hero-subtitle">基于认知神经科学设计的脑力训练游戏，帮助提升记忆、注意力与处理速度</p>
+    <button class="btn-primary" onclick="scrollToCategories()" style="font-size:16px; padding:12px 32px;">开始训练</button>
+    
+    <div class="hero-stats">
+      <div class="stat-item">
+        <span class="stat-number">7</span>
+        <span class="stat-label">认知领域</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">3</span>
+        <span class="stat-label">已上线</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">∞</span>
+        <span class="stat-label">训练潜力</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 分类展示 -->
+  <section class="container" id="categories-section">
+    <div style="padding-top: 60px;">
+      <h2 class="section-title">探索脑力训练分类</h2>
+      <p class="section-subtitle">覆盖七大核心认知能力，科学训练您的大脑</p>
+    </div>
+    
+    <div class="category-grid" id="category-grid">
+      <!-- JS 动态渲染 -->
+    </div>
+  </section>
+
+  <!-- 页脚 -->
+  <footer class="footer">
+    <p>脑力训练 - 基于认知神经科学的脑力训练平台</p>
+  </footer>
+
+  <script src="js/data.js"></script>
+  <script>
+    // 渲染 7 分类卡片
+    function renderCategories() {
+      const grid = document.getElementById('category-grid');
+      const categories = getAllCategories();
+      
+      grid.innerHTML = categories.map(cat => {
+        const isActive = cat.status === 'active';
+        const cardClass = isActive ? 'category-card active' : 'category-card coming-soon';
+        const metaHtml = isActive 
+         ? `<span class="game-count">${cat.gameCount} 款游戏</span><span style="--cat-color: ${cat.color}; color: var(--cat-color, #0D7377); font-weight:600; font-size:14px;">去训练 →</span>`
+          : `<span class="badge-coming-soon">即将上线</span>`;
+        const cardTag = isActive ? `<a href="category.html?type=${cat.id}" style="display:block; color:inherit;">` : '<div>';
+        const cardEndTag = isActive ? '</a>' : '</div>';
+        
+        return `
+          ${cardTag}
+          <div class="${cardClass}">
+            <div class="category-icon" style="--card-accent-bg: ${cat.lightColor};">${cat.icon}</div>
+            <div class="category-name" style="--card-accent: ${cat.color};">${cat.name}</div>
+            <div class="category-name-zh">${cat.nameZh}</div>
+            <div class="category-desc">${cat.description}</div>
+            <div class="category-meta">
+              ${metaHtml}
+            </div>
+          </div>
+          ${cardEndTag}
+        `;
+      }).join('');
+    }
+    
+    function scrollToCategories() {
+      document.getElementById('categories-section').scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    renderCategories();
+  </script>
+</body>
+</html>

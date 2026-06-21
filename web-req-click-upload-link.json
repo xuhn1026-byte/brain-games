@@ -1,0 +1,6 @@
+{
+  "action": "evaluate",
+  "args": {
+    "code": "(()=>{const links=document.querySelectorAll('a');for(let l of links){if(l.textContent.includes('uploading')||l.textContent.includes('Upload')){l.click();return'clicked: '+l.textContent.trim()}};return'not found'})()"
+  }
+}

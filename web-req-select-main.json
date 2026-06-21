@@ -1,0 +1,6 @@
+{
+  "action": "click",
+  "args": {
+    "selector": "#branch-select"
+  }
+}

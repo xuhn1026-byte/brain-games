@@ -1,0 +1,1 @@
+{"action":"evaluate","args":{"code":"(()=>{const btns=document.querySelectorAll('button');for(let b of btns){if(b.textContent.includes('Create repository')){b.click();return'clicked'}};return'not found'})()"}}

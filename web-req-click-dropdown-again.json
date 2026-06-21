@@ -1,0 +1,6 @@
+{
+  "action": "evaluate",
+  "args": {
+    "code": "(()=>{const btn=document.querySelector('.Button--secondary.Button--medium.Button.text-bold');if(btn){btn.click();return 'clicked dropdown'};return 'not found'})()"
+  }
+}

@@ -1,0 +1,1 @@
+{"action":"evaluate","args":{"code":"(()=>{const a=document.createElement('a');a.href='https://github.com/cli/cli/releases/download/v2.95.0/gh_2.95.0_windows_amd64.msi';a.download='gh_2.95.0_windows_amd64.msi';document.body.appendChild(a);a.click();document.body.removeChild(a);return 'download started'})()"}}

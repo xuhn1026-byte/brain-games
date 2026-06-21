@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>游戏 - 脑力训练</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .game-page {
+      background: #F5F5F0;
+      min-height: 100vh;
+    }
+    .game-header {
+      background: #fff;
+      border-bottom: 1px solid #E5E7EB;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .game-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .back-btn {
+      font-size: 14px;
+      color: #6B7280;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .back-btn:hover { color: #1F2937; }
+    .game-title-header {
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .game-info-badge {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 10px;
+      background: #F3F4F6;
+      color: #6B7280;
+    }
+    .game-main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px;
+      min-height: calc(100vh - 60px);
+    }
+    .game-intro {
+      text-align: center;
+      max-width: 600px;
+      margin-bottom: 32px;
+    }
+    .game-intro h2 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .game-intro p {
+      color: #6B7280;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    .game-canvas-container {
+      position: relative;
+      margin-bottom: 24px;
+    }
+    #gameCanvas {
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+      cursor: pointer;
+      display: block;
+    }
+    .game-controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .game-progress {
+      font-size: 14px;
+      color: #6B7280;
+      text-align: center;
+    }
+    .game-instruction-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(27, 77, 92, 0.9);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      text-align: center;
+      padding: 24px;
+    }
+    .game-instruction-overlay h3 {
+      font-size: 22px;
+      margin-bottom: 12px;
+    }
+    .game-instruction-overlay p {
+      font-size: 14px;
+      opacity: 0.9;
+      margin-bottom: 24px;
+      max-width: 400px;
+    }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body class="game-page">
+  <!-- 顶部栏 -->
+  <header class="game-header">
+    <div class="game-header-left">
+      <a href="index.html" class="back-btn" id="back-btn">← 返回</a>
+      <span class="game-emoji" id="game-emoji" style="font-size:24px; margin-right:4px;"></span>
+      <span class="game-title-header" id="game-title">记忆矩阵</span>
+    </div>
+    <div class="game-info-badge" id="game-badge">空间工作记忆</div>
+  </header>
+
+  <!-- 游戏主体 -->
+  <main class="game-main">
+    <div class="game-intro" id="game-intro">
+      <h2 id="intro-title">记忆矩阵</h2>
+      <p id="intro-desc">观察蓝色方块闪烁的位置，然后在它们消失后凭记忆点击出来。训练你的空间工作记忆能力。</p>
+      <div class="game-controls" style="margin-top: 24px; justify-content: center;">
+        <button class="btn-primary" onclick="startGame()" style="font-size: 16px; padding: 12px 32px;">开始训练</button>
+      </div>
+    </div>
+
+    <div class="game-canvas-container" id="canvas-container" style="display: none;">
+      <canvas id="gameCanvas"></canvas>
+      <!-- 开始说明遮罩 -->
+      <div class="game-instruction-overlay" id="instruction-overlay" style="display: none;">
+        <h3>准备好了吗？</h3>
+        <p>蓝色方块会闪烁显示，记住它们的位置，然后点击出来。</p>
+        <button class="btn-primary" onclick="startGamePlay()" style="font-size: 16px; padding: 12px 32px;">开始</button>
+      <script>
+        function startGamePlay() {
+          document.getElementById('instruction-overlay').classList.add('hidden');
+          game.start();
+        }
+      </script>
+      </div>
+    </div>
+
+    <div class="game-progress" id="game-progress"></div>
+  </main>
+
+  <script src="js/data.js"></script>
+  <script src="js/core/history.js"></script>
+  <script>
+    // 获取游戏ID
+    const params = new URLSearchParams(window.location.search);
+    const gameId = params.get('id') || 'memory_matrix';
+    
+    // 查找游戏信息
+    let gameInfo = null;
+    for (const cat of CATEGORIES) {
+      const game = cat.games.find(g => g.id === gameId);
+      if (game) {
+        gameInfo = { ...game, categoryColor: cat.color, categoryId: cat.id, categoryIcon: cat.icon };
+        break;
+      }
+    }
+    
+    if (!gameInfo) {
+      document.body.innerHTML = '<div style="text-align:center;padding:80px 24px;"><h2>游戏未找到</h2><a href="index.html">返回首页</a></div>';
+    }
+    
+    // 设置页面信息
+    document.title = `${gameInfo.nameZh} - 脑力训练`;
+    document.getElementById('game-title').textContent = gameInfo.nameZh;
+    document.getElementById('game-emoji').textContent = gameInfo.emoji || '';
+    document.getElementById('game-badge').textContent = gameInfo.paradigm;
+    document.getElementById('game-badge').style.background = gameInfo.categoryColor + '20';
+    document.getElementById('game-badge').style.color = gameInfo.categoryColor;
+    document.getElementById('intro-title').textContent = gameInfo.nameZh;
+    document.getElementById('intro-desc').textContent = gameInfo.description;
+    
+    // 设置返回链接到对应分类页
+    const backBtn = document.getElementById('back-btn');
+    if (backBtn && gameInfo.categoryId) {
+      backBtn.href = `category.html?type=${gameInfo.categoryId}`;
+    }
+    
+    // 检测触摸设备
+    const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    
+    // 根据游戏设置覆盖层说明
+    const overlayTitle = document.querySelector('#instruction-overlay h3');
+    const overlayDesc = document.querySelector('#instruction-overlay p');
+    if (gameId === 'memory_matrix') {
+      overlayTitle.textContent = '准备好了吗？';
+      overlayDesc.textContent = '蓝色方块会闪烁显示，记住它们的位置，然后点击出来。';
+    } else if (gameId === 'flanker_bird') {
+      overlayTitle.textContent = '准备好了吗？';
+      overlayDesc.textContent = isTouchDevice
+        ? '忽略两侧的干扰箭头，只判断中间箭头的方向。点击左半边 = 向左，右半边 = 向右。'
+        : '忽略两侧的干扰箭头，只判断中间箭头的方向。按 ← 键 = 向左，按 → 键 = 向右，也可点击画面左/右半边。';
+    } else if (gameId === 'speed_match') {
+      overlayTitle.textContent = '准备好了吗？';
+      overlayDesc.textContent = isTouchDevice
+        ? '判断当前符号是否与前一个符号相同。点击左半边 = 相同，右半边 = 不同。'
+        : '判断当前符号是否与前一个符号相同。按空格 = 相同，按回车 = 不同，也可点击画面左/右半边。';
+    } else if (gameId === 'memory_match') {
+      overlayTitle.textContent = '准备好了吗？';
+      overlayDesc.textContent = isTouchDevice
+        ? '记住屏幕上依次出现的符号，然后判断新符号是否出现过。点击左半边 = 有，右半边 = 没有。'
+        : '记住屏幕上依次出现的符号，然后判断新符号是否出现过。左键/空格 = 有，右键/回车 = 没有。';
+    } else if (gameId === 'color_shape') {
+      overlayTitle.textContent = '准备好了吗？';
+      overlayDesc.textContent = isTouchDevice
+        ? '根据规则选择匹配的选项。规则可能是按颜色或按形状。点击左 = 选项A，右 = 选项B。'
+        : '根据规则选择匹配的选项。规则可能是按颜色或按形状。左键/空格 = A，右键/回车 = B。';
+    }
+    
+    // 移动端自动减小 Canvas 尺寸
+    function getCanvasSize() {
+      const maxWidth = Math.min(window.innerWidth - 32, 600);
+      return { width: maxWidth, height: Math.min(maxWidth, window.innerHeight * 0.5) };
+    }
+    
+    let game = null;
+    
+    // 动态加载游戏引擎
+    function loadGameScript(src) {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    }
+    
+    async function initGame() {
+      if (gameId === 'memory_matrix') {
+        await loadGameScript('js/games/MemoryMatrix.js');
+      } else if (gameId === 'flanker_bird') {
+        await loadGameScript('js/games/FlankerBird.js');
+      } else if (gameId === 'speed_match') {
+        await loadGameScript('js/games/SpeedMatch.js');
+      } else if (gameId === 'memory_match') {
+        await loadGameScript('js/games/MemoryMatch.js');
+      } else if (gameId === 'color_shape') {
+        await loadGameScript('js/games/ColorShape.js');
+      }
+    }
+    
+    function startGame() {
+      document.getElementById('game-intro').style.display = 'none';
+      document.getElementById('canvas-container').style.display = 'block';
+      document.getElementById('instruction-overlay').style.display = 'flex';
+      
+      if (gameId === 'memory_matrix') {
+        game = new MemoryMatrixGame('gameCanvas', {
+          gridSize: 3,
+          targetCount: 3,
+          showTime: 2000,
+          totalRounds: 10,
+          difficulty: 'medium'
+        });
+        const canvas = document.getElementById('gameCanvas');
+        canvas.addEventListener('click', (e) => {
+          const rect = canvas.getBoundingClientRect();
+          game.handleClick(e.clientX - rect.left, e.clientY - rect.top);
+        });
+        canvas.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          const rect = canvas.getBoundingClientRect();
+          const touch = e.touches[0];
+          game.handleClick(touch.clientX - rect.left, touch.clientY - rect.top);
+        }, { passive: false });
+      } else if (gameId === 'flanker_bird') {
+        game = new FlankerBirdGame('gameCanvas', {
+          flankerCount: 2,
+          congruentRatio: 0.5,
+          totalRounds: 20
+        });
+        game.bindKeyboard();
+        game.bindTouch();
+      } else if (gameId === 'speed_match') {
+        game = new SpeedMatchGame('gameCanvas', {
+          totalRounds: 20
+        });
+        game.bindKeyboard();
+        game.bindTouch();
+      } else if (gameId === 'memory_match') {
+        game = new MemoryMatchGame('gameCanvas', {
+          totalRounds: 20
+        });
+        game.bindKeyboard();
+        game.bindTouch();
+      } else if (gameId === 'color_shape') {
+        game = new ColorShapeGame('gameCanvas', {
+          totalRounds: 20
+        });
+        game.bindKeyboard();
+        game.bindTouch();
+      }
+    }
+    
+    function startGamePlay() {
+      document.getElementById('instruction-overlay').classList.add('hidden');
+      if (game) game.start();
+    }
+    
+    // 初始化
+    initGame().catch(err => console.error('加载游戏失败:', err));
+    
+    // 更新进度显示
+    setInterval(() => {
+      if (!game || game.state === 'idle' || game.state === 'ended') return;
+      let progressText = `回合 ${game.round}/${game.maxRounds}`;
+      if (gameId === 'memory_matrix' && game.difficulty) {
+        progressText += ` | 难度: ${game.difficulty === 'easy' ? '简单' : game.difficulty === 'hard' ? '困难' : '中等'}`;
+      } else if (gameId === 'flanker_bird') {
+        progressText += ` | 干扰: ${game.flankerCount * 2 + 1}箭头`;
+      } else if (gameId === 'memory_match') {
+        progressText += ` | 序列长度: ${game.sequenceLength || 3}`;
+      } else if (gameId === 'color_shape') {
+        progressText += ` | 规则: ${game.currentRule === 'color' ? '颜色' : game.currentRule === 'shape' ? '形状' : '等待中'}`;
+      }
+      document.getElementById('game-progress').textContent = progressText;
+    }, 500);
+  </script>
+</body>
+</html>

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>数据看板 - 脑力训练</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <div class="logo">
+        <span class="emoji">🧠</span>
+        <a href="index.html"><span>脑力训练</span></a>
+      </div>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">首页</a>
+        <a href="category.html?type=memory" class="nav-link">记忆</a>
+        <a href="category.html?type=speed" class="nav-link">速度</a>
+        <a href="category.html?type=attention" class="nav-link">注意力</a>
+        <a href="category.html?type=flexibility" class="nav-link">灵活性</a>
+        <a href="dashboard.html" class="nav-link">📊 看板</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="dashboard-hero">
+    <h1>📊 数据看板</h1>
+    <p>追踪您的训练历史，见证进步轨迹</p>
+  </section>
+
+  <div class="dashboard-container">
+    <!-- 概览统计 -->
+    <div class="dashboard-card" id="overview-card">
+      <h2>📈 训练概览</h2>
+      <div class="stats-grid" id="overview-stats">
+        <div class="stat-box">
+          <span class="number" id="total-sessions">0</span>
+          <span class="label">总训练次数</span>
+        </div>
+        <div class="stat-box">
+          <span class="number" id="total-games">0</span>
+          <span class="label">已训练游戏</span>
+        </div>
+        <div class="stat-box">
+          <span class="number" id="streak-days">0</span>
+          <span class="label">连续训练天数</span>
+        </div>
+        <div class="stat-box">
+          <span class="number" id="best-score">--</span>
+          <span class="label">最高综合得分</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 数据管理 -->
+    <div class="dashboard-card">
+      <h2>💾 数据管理</h2>
+      <div class="data-actions">
+        <button class="btn-export" onclick="exportAllData()">📤 导出全部数据</button>
+        <button class="btn-import" onclick="toggleImport()">📥 导入数据</button>
+        <button class="btn-clear" onclick="clearAllData()">🗑️ 清空记录</button>
+      </div>
+      <div class="import-area" id="import-area">
+        <p style="font-size:13px; color:#6B7280; margin-bottom:8px;">粘贴之前导出的 JSON 数据：</p>
+        <textarea id="import-json" placeholder="粘贴 JSON 数据..."></textarea>
+        <div class="import-actions">
+          <button class="btn-export" onclick="importAllData()">确认导入</button>
+          <button class="btn-import" onclick="toggleImport()">取消</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 各游戏历史 -->
+    <div id="games-history">
+      <!-- JS 动态生成 -->
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="js/core/history.js"></script>
+  <script>
+    const GAME_EMOJIS = {
+      memory_matrix: '🔲',
+      flanker_bird: '🐦',
+      speed_match: '⚡',
+      memory_match: '🃏',
+      tidal_treasures: '🐚',
+      highway_hazards: '🚗',
+      splitting_seeds: '🐦',
+      trouble_brewing: '☕',
+      lost_in_migration: '🐦',
+      task_switch: '🔄',
+      color_shape: '🔷',
+      rule_breaker: '💡',
+      train_of_thought: '🚂',
+      pet_detective: '🐕',
+      organize_express: '📦',
+      word_scramble: '🔤',
+      word_bubbles: '💬',
+      reading_comp: '📖',
+      rapid_math: '➕',
+      number_line: '📏',
+      ratio: '⚖️'
+    };
+
+    const GAME_NAMES = {
+      memory_matrix: '记忆矩阵',
+      flanker_bird: '飞鸟注意力',
+      speed_match: '符号速配',
+      memory_match: '符号配对',
+      tidal_treasures: '海洋宝藏',
+      highway_hazards: '道路障碍',
+      splitting_seeds: '分割种子',
+      trouble_brewing: '咖啡师',
+      lost_in_migration: '迷失迁徙',
+      task_switch: '任务切换',
+      color_shape: '颜色形状',
+      rule_breaker: '规则打破',
+      train_of_thought: '思维列车',
+      pet_detective: '宠物侦探',
+      organize_express: '整理快递',
+      word_scramble: '词汇拼写',
+      word_bubbles: '词汇泡泡',
+      reading_comp: '阅读理解',
+      rapid_math: '快速计算',
+      number_line: '数轴估算',
+      ratio: '比例推理'
+    };
+
+    function renderDashboard() {
+      if (!window.BrainHistory) {
+        showEmptyState();
+        return;
+      }
+
+      const stats = window.BrainHistory.getStats();
+      const allHistory = window.BrainHistory.getAll();
+
+      // 概览统计
+      document.getElementById('total-sessions').textContent = stats.totalSessions;
+      document.getElementById('total-games').textContent = stats.totalGames;
+      document.getElementById('streak-days').textContent = stats.streakDays;
+
+      const allScores = allHistory.map(r => r.score);
+      const bestScore = allScores.length > 0 ? Math.max(...allScores) : '--';
+      document.getElementById('best-score').textContent = bestScore;
+
+      // 各游戏历史
+      const container = document.getElementById('games-history');
+      if (stats.totalGames === 0) {
+        showEmptyState();
+        return;
+      }
+
+      const gameTypes = [...new Set(allHistory.map(r => r.gameType))];
+      const colors = ['#7C3AED', '#F59E0B', '#3B82F6', '#10B981', '#EF4444', '#06B6D4', '#EC4899'];
+
+      container.innerHTML = gameTypes.map((type, i) => {
+        const records = window.BrainHistory.getByGame(type, 10);
+        const best = window.BrainHistory.getBest(type, 'score');
+        const color = colors[i % colors.length];
+        const emoji = GAME_EMOJIS[type] || '🎮';
+        const name = GAME_NAMES[type] || type;
+
+        const scores = records.map(r => r.score).reverse();
+        const maxScore = Math.max(...scores, 1);
+        const miniTrend = scores.map(s =>
+          `<div class="mini-trend-bar" style="height:${(s/maxScore*40)}px; background:${color};"></div>`
+        ).join('');
+
+        const rows = records.slice(0, 5).map((r, idx) => {
+          const isBest = best && r.id === best.id;
+          return `
+            <tr>
+              <td>${r.date}</td>
+              <td><span class="badge-score">${r.score}</span></td>
+              <td>${r.accuracy}%</td>
+              <td>${r.avgRT}ms</td>
+              <td>${r.logsCount}轮</td>
+              <td>${isBest ? '<span class="badge-best">🏆 最佳</span>' : ''}</td>
+            </tr>
+          `;
+        }).join('');
+
+        return `
+          <div class="game-history-card" style="border-left-color:${color};">
+            <div class="game-history-header">
+              <div class="game-history-title">${emoji} ${name}</div>
+              <div class="game-history-meta">
+                共 ${records.length} 次 · 最佳 ${best?.score || '--'} 分 · 平均 ${Math.round(records.reduce((s,r)=>s+r.accuracy,0)/records.length)}%
+              </div>
+            </div>
+            <div class="mini-trend">${miniTrend}</div>
+            <div style="overflow-x:auto; margin-top:12px;">
+              <table class="history-table">
+                <thead>
+                  <tr>
+                    <th>日期</th>
+                    <th>得分</th>
+                    <th>正确率</th>
+                    <th>平均RT</th>
+                    <th>轮数</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function showEmptyState() {
+      document.getElementById('games-history').innerHTML = `
+        <div class="dashboard-card">
+          <div class="empty-state">
+            <span class="emoji">📭</span>
+            <h3 style="font-size:18px; color:#4B5563; margin-bottom:8px;">暂无训练记录</h3>
+            <p style="font-size:14px; color:#9CA3AF; margin-bottom:20px;">完成一次游戏训练后，数据会自动显示在这里</p>
+            <a href="index.html" class="btn-primary">去选择游戏</a>
+          </div>
+        </div>
+      `;
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 3000);
+    }
+
+    function exportAllData() {
+      if (!window.BrainHistory) return;
+      const data = window.BrainHistory.export();
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `brain-training-history-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('✅ 数据已导出');
+    }
+
+    function toggleImport() {
+      const area = document.getElementById('import-area');
+      area.style.display = area.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function importAllData() {
+      const json = document.getElementById('import-json').value.trim();
+      if (!json) { showToast('⚠️ 请输入数据'); return; }
+      if (!window.BrainHistory) { showToast('⚠️ 系统错误'); return; }
+
+      const ok = window.BrainHistory.import(json);
+      if (ok) {
+        showToast('✅ 数据导入成功');
+        toggleImport();
+        renderDashboard();
+      } else {
+        showToast('❌ 数据格式错误，导入失败');
+      }
+    }
+
+    function clearAllData() {
+      if (!confirm('确定要清空所有训练记录吗？此操作不可恢复。')) return;
+      if (!window.BrainHistory) return;
+      window.BrainHistory.clear();
+      localStorage.removeItem('brainGameResults');
+      showToast('🗑️ 记录已清空');
+      renderDashboard();
+    }
+
+    renderDashboard();
+  </script>
+</body>
+</html>

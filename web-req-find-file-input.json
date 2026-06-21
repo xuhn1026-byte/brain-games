@@ -1,0 +1,6 @@
+{
+  "action": "evaluate",
+  "args": {
+    "code": "(()=>{const inputs=document.querySelectorAll('input[type=file]');return [...inputs].map(i=>({id:i.id,className:i.className,name:i.name,selector:i.id?'#'+i.id:i.className?'.'+i.className.split(' ')[0]:'input[type=file]'}))})()"
+  }
+}

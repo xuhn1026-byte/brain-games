@@ -1,0 +1,13 @@
+{
+  "action": "upload",
+  "args": {
+    "selector": "#upload-manifest-files-input",
+    "files": [
+      "C:\\Users\\小香猪\\Documents\\kimi\\workspace\\brain-games\\deploy\\index.html",
+      "C:\\Users\\小香猪\\Documents\\kimi\\workspace\\brain-games\\deploy\\category.html",
+      "C:\\Users\\小香猪\\Documents\\kimi\\workspace\\brain-games\\deploy\\game.html",
+      "C:\\Users\\小香猪\\Documents\\kimi\\workspace\\brain-games\\deploy\\results.html",
+      "C:\\Users\\小香猪\\Documents\\kimi\\workspace\\brain-games\\deploy\\dashboard.html"
+    ]
+  }
+}

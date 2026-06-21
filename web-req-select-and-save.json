@@ -1,0 +1,6 @@
+{
+  "action": "evaluate",
+  "args": {
+    "code": "(()=>{const btn=document.querySelector('.Button--secondary.Button--medium.Button.text-bold');if(btn){btn.click();setTimeout(()=>{const items=document.querySelectorAll('li, .SelectMenu-item, [role=menuitem]');for(let item of items){if(item.textContent.trim()==='main'){item.click();setTimeout(()=>{const save=document.querySelector('.btn.ml-1.tmp-ml-1');if(save)save.click();},500);break;}}},500);return 'clicked'};return 'not found'})()"
+  }
+}

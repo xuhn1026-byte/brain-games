@@ -1,0 +1,1 @@
+{"action":"evaluate","args":{"code":"document.querySelector('button.btn-primary').click()"},"session":"speed-test"}

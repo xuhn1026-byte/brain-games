@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>测试结果 - 脑力训练</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* 仅保留结果页特有样式（CSS 未定义的部分） */
+  </style>
+</head>
+<body>
+  <!-- 导航栏 -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <div class="logo">
+        <span class="emoji">🧠</span>
+        <a href="index.html"><span>脑力训练</span></a>
+      </div>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">首页</a>
+        <a href="category.html?type=memory" class="nav-link">记忆</a>
+        <a href="category.html?type=speed" class="nav-link">速度</a>
+        <a href="category.html?type=attention" class="nav-link">注意力</a>
+        <a href="category.html?type=flexibility" class="nav-link">灵活性</a>
+        <a href="dashboard.html" class="nav-link">📊 看板</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="results-hero">
+    <h1>🎉 测试完成</h1>
+    <p>您的本次训练数据已记录，以下是详细表现分析</p>
+  </section>
+
+  <div class="results-container">
+    <!-- 综合统计 -->
+    <div class="result-card">
+      <h2>📊 综合表现</h2>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <span class="number" id="total-trials">--</span>
+          <span class="label">总轮次</span>
+        </div>
+        <div class="stat-box">
+          <span class="number" id="accuracy">--</span>
+          <span class="label">正确率</span>
+        </div>
+        <div class="stat-box">
+          <span class="number" id="avg-rt">--</span>
+          <span class="label">平均反应(ms)</span>
+        </div>
+        <div class="stat-box">
+          <span class="number" id="score">--</span>
+          <span class="label">综合得分</span>
+        </div>
+      </div>
+      <!-- 游戏专属认知指标 -->
+      <div id="cognitive-metrics" style="margin-top:20px; display:none;"></div>
+    </div>
+
+    <!-- 对比与趋势 -->
+    <div class="result-card" id="comparison-card" style="display:none;">
+      <h2>📈 进步对比</h2>
+      <div class="stats-grid" id="comparison-grid">
+        <div class="stat-box" style="background:#F0FDF4;">
+          <span class="number" id="cmp-score" style="color:#15803D;">--</span>
+          <span class="label">得分变化</span>
+          <span class="sub-label" id="cmp-score-delta"></span>
+        </div>
+        <div class="stat-box" style="background:#F0F9FF;">
+          <span class="number" id="cmp-accuracy" style="color:#0369A1;">--</span>
+          <span class="label">正确率变化</span>
+          <span class="sub-label" id="cmp-accuracy-delta"></span>
+        </div>
+        <div class="stat-box" style="background:#FFFBEB;">
+          <span class="number" id="cmp-rt" style="color:#D97706;">--</span>
+          <span class="label">反应时间变化</span>
+          <span class="sub-label" id="cmp-rt-delta"></span>
+        </div>
+        <div class="stat-box" style="background:#F5F3FF;">
+          <span class="number" id="cmp-best" style="color:#7C3AED;">--</span>
+          <span class="label">历史最佳</span>
+          <span class="sub-label" id="cmp-best-date"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 历史趋势图 -->
+    <div class="result-card" id="trend-card" style="display:none;">
+      <h2>📊 历史趋势（最近10次）</h2>
+      <div class="trend-chart-container">
+        <div class="trend-legend">
+          <span class="trend-legend-item"><span class="trend-dot score"></span>得分</span>
+          <span class="trend-legend-item"><span class="trend-dot accuracy"></span>正确率</span>
+          <span class="trend-legend-item"><span class="trend-dot rt"></span>反应时间</span>
+        </div>
+        <div class="trend-chart" id="trend-chart"></div>
+      </div>
+    </div>
+
+    <!-- 详细数据表格 -->
+    <div class="result-card">
+      <h2>📝 逐轮数据明细</h2>
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="data-table">
+          <thead>
+            <tr>
+              <th>轮次</th>
+              <th>刺激</th>
+              <th>反应</th>
+              <th>结果</th>
+              <th>反应时间(ms)</th>
+              <th>难度</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <!-- JS 动态填充 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 反应时间分布 -->
+    <div class="result-card">
+      <h2>⏱️ 反应时间分布</h2>
+      <div id="rt-chart">
+        <!-- JS 动态生成条形图 -->
+      </div>
+    </div>
+
+    <!-- 难度变化曲线 -->
+    <div class="result-card">
+      <h2>📈 难度变化</h2>
+      <div id="difficulty-chart">
+        <!-- JS 动态生成 -->
+      </div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="btn-group">
+      <a href="index.html" class="btn-outline">返回首页</a>
+      <button class="btn-outline" onclick="exportData()">📥 导出数据(JSON)</button>
+    </div>
+  </div>
+
+  <!-- 页脚 -->
+  <footer class="footer">
+    <p>脑力训练 - 基于认知神经科学的脑力训练平台</p>
+  </footer>
+
+  <script>
+    // 从 localStorage 读取测试数据（由游戏页面写入）
+    function loadResults() {
+      const data = JSON.parse(localStorage.getItem('brainGameResults') || '{}');
+      if (!data.logs || data.logs.length === 0) {
+        document.querySelector('.results-container').innerHTML = `
+          <div class="result-card" style="text-align:center; padding:60px 24px;">
+            <div style="font-size:48px; margin-bottom:16px;">📭</div>
+            <h2 style="font-size:22px; margin-bottom:8px;">暂无测试数据</h2>
+            <p style="color:#6B7280; margin-bottom:24px;">请先完成一个游戏训练，数据会自动显示在这里</p>
+            <a href="index.html" class="btn-outline">去选择游戏</a>
+          </div>
+        `;
+        return;
+      }
+
+      const isMemoryMatrix = data.gameType === 'memory_matrix';
+      const isFlanker = data.gameType === 'flanker_bird';
+      const isSpeedMatch = data.gameType === 'speed_match';
+      const isMemoryMatch = data.gameType === 'memory_match';
+      const isColorShape = data.gameType === 'color_shape';
+      const summary = data.summary || {};
+      
+      // 综合统计
+      document.getElementById('total-trials').textContent = data.completedRounds || data.logs.length;
+      document.getElementById('accuracy').textContent = (summary.avgAccuracy || '--') + '%';
+      
+      if (isMemoryMatrix) {
+        document.getElementById('avg-rt').textContent = (summary.avgRecallTime || '--') + 'ms';
+        const score = summary.avgAccuracy && summary.avgRecallTime 
+          ? Math.round(summary.avgAccuracy * 10 - summary.avgRecallTime / 100)
+          : '--';
+        document.getElementById('score').textContent = score;
+      } else if (isFlanker) {
+        document.getElementById('avg-rt').textContent = (summary.avgRT || '--') + 'ms';
+        const score = summary.avgAccuracy && summary.interferenceEffect !== undefined
+          ? Math.round(summary.avgAccuracy * 10 - Math.abs(summary.interferenceEffect) / 20)
+          : '--';
+        document.getElementById('score').textContent = score;
+      } else if (isSpeedMatch) {
+        document.getElementById('avg-rt').textContent = (summary.avgRT || '--') + 'ms';
+        const score = summary.avgAccuracy && summary.avgRT
+          ? Math.round(summary.avgAccuracy * 10 - summary.avgRT / 50)
+          : '--';
+        document.getElementById('score').textContent = score;
+      } else if (isMemoryMatch) {
+        document.getElementById('avg-rt').textContent = (summary.avgRT || '--') + 'ms';
+        const score = summary.avgAccuracy && summary.avgRT
+          ? Math.round(summary.avgAccuracy * 10 - summary.avgRT / 50)
+          : '--';
+        document.getElementById('score').textContent = score;
+      } else if (isColorShape) {
+        document.getElementById('avg-rt').textContent = (summary.avgRT || '--') + 'ms';
+        const score = summary.avgAccuracy && summary.avgRT
+          ? Math.round(summary.avgAccuracy * 10 - summary.avgRT / 50)
+          : '--';
+        document.getElementById('score').textContent = score;
+      } else {
+        document.getElementById('avg-rt').textContent = (summary.avgRT || '--') + 'ms';
+        document.getElementById('score').textContent = summary.avgAccuracy || '--';
+      }
+
+      // 表格数据
+      const tbody = document.getElementById('table-body');
+      if (isMemoryMatrix) {
+        tbody.innerHTML = data.logs.slice(0, 30).map((log) => {
+          const allClicks = log.clicks || [];
+          const firstClick = allClicks[0];
+          const firstRT = firstClick ? firstClick.rt : '--';
+          return `
+            <tr>
+              <td>${log.round}</td>
+              <td>${log.gridSize}×${log.gridSize} 网格, ${log.targetCount}个目标</td>
+              <td>点击 ${allClicks.length} 次</td>
+              <td><span class="badge-${log.accuracy >= 0.7 ? 'success' : 'fail'}">正确${log.hits}/${log.targetCount}</span></td>
+              <td>${firstRT}</td>
+              <td>${log.difficulty === 'easy' ? '简单' : log.difficulty === 'hard' ? '困难' : '中等'}</td>
+            </tr>
+          `;
+        }).join('');
+      } else if (isFlanker) {
+        tbody.innerHTML = data.logs.slice(0, 30).map((log) => {
+          const condition = log.isNeutral ? '中性' : (log.isCongruent ? '一致' : '不一致');
+          const targetDir = log.targetDirection === 'left' ? '←' : '→';
+          const respDir = log.response === 'left' ? '←' : (log.response === 'right' ? '→' : '超时');
+          return `
+            <tr>
+              <td>${log.round}</td>
+              <td>${log.flankerCount * 2 + 1}箭头 (${condition})</td>
+              <td>${targetDir} → ${respDir}</td>
+              <td><span class="badge-${log.correct ? 'success' : 'fail'}">${log.correct ? '正确' : '错误'}</span></td>
+              <td>${log.rt || '-'}</td>
+              <td>${log.flankerCount * 2 + 1}箭头</td>
+            </tr>
+          `;
+        }).join('');
+      } else if (isSpeedMatch) {
+        const setNames = { shapes: '形状', colors: '颜色', letters: '字母' };
+        tbody.innerHTML = data.logs.slice(0, 30).map((log) => {
+          const resp = log.response === 'same' ? '相同' : (log.response === 'different' ? '不同' : '超时');
+          const actual = log.isSame ? '相同' : '不同';
+          return `
+            <tr>
+              <td>${log.round}</td>
+              <td>${log.symbol} (实际${actual})</td>
+              <td>${resp}</td>
+              <td><span class="badge-${log.correct ? 'success' : 'fail'}">${log.correct ? '正确' : '错误'}</span></td>
+              <td>${log.rt || '-'}</td>
+              <td>${setNames[log.symbolSet] || log.symbolSet}</td>
+            </tr>
+          `;
+        }).join('');
+      } else if (isMemoryMatch) {
+        tbody.innerHTML = data.logs.slice(0, 30).map((log) => {
+          const resp = log.response === 'yes' ? '有' : (log.response === 'no' ? '没有' : '超时');
+          const actual = log.isMatch ? '有' : '没有';
+          return `
+            <tr>
+              <td>${log.round}</td>
+              <td>${log.targetSymbol} (实际${actual})</td>
+              <td>${resp}</td>
+              <td><span class="badge-${log.correct ? 'success' : 'fail'}">${log.correct ? '正确' : '错误'}</span></td>
+              <td>${log.rt || '-'}</td>
+              <td>序列长度 ${log.sequenceLength || 3}</td>
+            </tr>
+          `;
+        }).join('');
+      } else if (isColorShape) {
+        tbody.innerHTML = data.logs.slice(0, 30).map((log) => {
+          const rule = log.rule === 'color' ? '颜色' : (log.rule === 'shape' ? '形状' : '未知');
+          const resp = log.response === 'A' ? '选项A' : (log.response === 'B' ? '选项B' : '超时');
+          const switchType = log.isSwitch ? '切换' : '重复';
+          return `
+            <tr>
+              <td>${log.round}</td>
+              <td>规则: ${rule} (${switchType})</td>
+              <td>${resp}</td>
+              <td><span class="badge-${log.correct ? 'success' : 'fail'}">${log.correct ? '正确' : '错误'}</span></td>
+              <td>${log.rt || '-'}</td>
+              <td>${rule}</td>
+            </tr>
+          `;
+        }).join('');
+      } else {
+        tbody.innerHTML = data.logs.slice(0, 30).map((log, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${log.stimulus || '-'}</td>
+            <td>${log.response || '-'}</td>
+            <td><span class="badge-${log.correct ? 'success' : 'fail'}">${log.correct ? '正确' : '错误'}</span></td>
+            <td>${log.rt || '-'}</td>
+            <td>${log.difficulty || '-'}</td>
+          </tr>
+        `).join('');
+      }
+
+      // 反应时间分布
+      let allRTs = [];
+      if (isMemoryMatrix) {
+        data.logs.forEach(log => {
+          (log.clicks || []).forEach(c => {
+            if (c.rt) allRTs.push(c.rt);
+          });
+        });
+      } else {
+        allRTs = data.logs.map(l => l.rt || 0).filter(rt => rt > 0 && rt < 5000);
+      }
+      
+      const rtBuckets = { fast: 0, normal: 0, slow: 0, verySlow: 0 };
+      allRTs.forEach(rt => {
+        if (rt < 500) rtBuckets.fast++;
+        else if (rt < 1000) rtBuckets.normal++;
+        else if (rt < 2000) rtBuckets.slow++;
+        else rtBuckets.verySlow++;
+      });
+      const maxCount = Math.max(...Object.values(rtBuckets), 1);
+      const colors = { fast: '#10B981', normal: '#3B82F6', slow: '#F59E0B', verySlow: '#EF4444' };
+      const labels = { fast: '极快 (<500ms)', normal: '正常 (500-1000ms)', slow: '较慢 (1000-2000ms)', verySlow: '慢 (>2000ms)' };
+
+      document.getElementById('rt-chart').innerHTML = Object.entries(rtBuckets).map(([key, count]) => `
+        <div style="margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;">
+            <span>${labels[key]}</span>
+            <span style="font-weight:600;">${count} 次</span>
+          </div>
+          <div class="chart-bar">
+            <div class="chart-bar-fill" style="width:${(count/maxCount*100)}%; background:${colors[key]};"></div>
+          </div>
+        </div>
+      `).join('');
+
+      // 难度变化
+      let difficulties = [];
+      let chartTitle = '前20轮难度变化';
+      if (isMemoryMatrix) {
+        difficulties = data.logs.map((l, i) => ({ round: i + 1, level: l.gridSize * 10 + l.targetCount }));
+        chartTitle = '前20轮难度变化（网格大小×目标数）';
+      } else if (isFlanker) {
+        difficulties = data.logs.map((l, i) => ({ round: i + 1, level: l.flankerCount * 2 + 1 }));
+        chartTitle = '前20轮难度变化（箭头数量）';
+      } else if (isSpeedMatch) {
+        const setLevels = { shapes: 1, colors: 2, letters: 3 };
+        difficulties = data.logs.map((l, i) => ({ round: i + 1, level: setLevels[l.symbolSet] || 1 }));
+        chartTitle = '前20轮难度变化（符号类型）';
+      } else if (isMemoryMatch) {
+        difficulties = data.logs.map((l, i) => ({ round: i + 1, level: l.sequenceLength || 3 }));
+        chartTitle = '前20轮难度变化（序列长度）';
+      } else if (isColorShape) {
+        const ruleLevels = { color: 1, shape: 2 };
+        difficulties = data.logs.map((l, i) => ({ round: i + 1, level: ruleLevels[l.rule] || 1 }));
+        chartTitle = '前20轮难度变化（规则类型）';
+      } else {
+        difficulties = data.logs.map((l, i) => ({ round: i + 1, level: l.difficultyLevel || 1 }));
+      }
+      const maxLevel = Math.max(...difficulties.map(d => d.level), 1);
+      document.getElementById('difficulty-chart').innerHTML = `
+        <div style="display:flex; align-items:flex-end; gap:4px; height:120px; padding-top:20px;">
+          ${difficulties.slice(0, 20).map(d => `
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;">
+              <div style="width:100%; background:#3B82F6; border-radius:4px 4px 0 0; height:${(d.level/maxLevel*80)}px; transition:height 0.3s;"></div>
+              <span style="font-size:11px; color:#9CA3AF;">${d.round}</span>
+            </div>
+          `).join('')}
+        </div>
+        <div style="text-align:center; font-size:12px; color:#6B7280; margin-top:8px;">${chartTitle}</div>
+      `;
+
+      // 认知指标专区
+      const metricsDiv = document.getElementById('cognitive-metrics');
+      if (isFlanker && summary.interferenceEffect !== undefined) {
+        metricsDiv.style.display = 'block';
+        metricsDiv.innerHTML = `
+          <h3 style="font-size:15px; font-weight:600; margin-bottom:12px; color:#1F2937;">🧠 认知干扰指标</h3>
+          <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+            <div class="stat-box" style="background:#F0F9FF;">
+              <span class="number" style="color:#0369A1;">${summary.interferenceEffect}ms</span>
+              <span class="label">干扰效应</span>
+            </div>
+            <div class="stat-box" style="background:#F0FDF4;">
+              <span class="number" style="color:#15803D;">${summary.congruentRT || '--'}ms</span>
+              <span class="label">一致条件RT</span>
+            </div>
+            <div class="stat-box" style="background:#FEF2F2;">
+              <span class="number" style="color:#DC2626;">${summary.incongruentRT || '--'}ms</span>
+              <span class="label">不一致条件RT</span>
+            </div>
+          </div>
+          <p style="font-size:12px; color:#6B7280; margin-top:8px;">干扰效应 = 不一致条件RT − 一致条件RT。值越大说明抑制干扰的能力越弱。</p>
+        `;
+      } else if (isSpeedMatch && summary.sameRT !== undefined) {
+        metricsDiv.style.display = 'block';
+        metricsDiv.innerHTML = `
+          <h3 style="font-size:15px; font-weight:600; margin-bottom:12px; color:#1F2937;">⚡ 处理速度分析</h3>
+          <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+            <div class="stat-box" style="background:#F0FDF4;">
+              <span class="number" style="color:#15803D;">${summary.sameRT || '--'}ms</span>
+              <span class="label">相同条件RT</span>
+            </div>
+            <div class="stat-box" style="background:#FEF2F2;">
+              <span class="number" style="color:#DC2626;">${summary.diffRT || '--'}ms</span>
+              <span class="label">不同条件RT</span>
+            </div>
+            <div class="stat-box" style="background:#F0F9FF;">
+              <span class="number" style="color:#0369A1;">${summary.diffRT && summary.sameRT ? (summary.diffRT - summary.sameRT) : '--'}ms</span>
+              <span class="label">差异</span>
+            </div>
+          </div>
+          <p style="font-size:12px; color:#6B7280; margin-top:8px;">相同条件通常比不同条件反应更快。差异越大说明认知负荷越高。</p>
+        `;
+      } else if (isMemoryMatch && summary.matchRT !== undefined) {
+        metricsDiv.style.display = 'block';
+        metricsDiv.innerHTML = `
+          <h3 style="font-size:15px; font-weight:600; margin-bottom:12px; color:#1F2937;">🧠 工作记忆指标</h3>
+          <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+            <div class="stat-box" style="background:#F0FDF4;">
+              <span class="number" style="color:#15803D;">${summary.matchRT || '--'}ms</span>
+              <span class="label">匹配条件RT</span>
+            </div>
+            <div class="stat-box" style="background:#FEF2F2;">
+              <span class="number" style="color:#DC2626;">${summary.noMatchRT || '--'}ms</span>
+              <span class="label">不匹配条件RT</span>
+            </div>
+            <div class="stat-box" style="background:#F0F9FF;">
+              <span class="number" style="color:#0369A1;">${summary.noMatchRT && summary.matchRT ? (summary.noMatchRT - summary.matchRT) : '--'}ms</span>
+              <span class="label">差异</span>
+            </div>
+          </div>
+          <p style="font-size:12px; color:#6B7280; margin-top:8px;">匹配条件通常比不匹配条件反应更快。差异反映工作记忆检索效率。</p>
+        `;
+      } else if (isColorShape && summary.switchCost !== undefined) {
+        metricsDiv.style.display = 'block';
+        metricsDiv.innerHTML = `
+          <h3 style="font-size:15px; font-weight:600; margin-bottom:12px; color:#1F2937;">🔄 任务切换成本</h3>
+          <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+            <div class="stat-box" style="background:#F0F9FF;">
+              <span class="number" style="color:#0369A1;">${summary.switchCost}ms</span>
+              <span class="label">切换成本</span>
+            </div>
+            <div class="stat-box" style="background:#F0FDF4;">
+              <span class="number" style="color:#15803D;">${summary.repeatRT || '--'}ms</span>
+              <span class="label">重复条件RT</span>
+            </div>
+            <div class="stat-box" style="background:#FEF2F2;">
+              <span class="number" style="color:#DC2626;">${summary.switchRT || '--'}ms</span>
+              <span class="label">切换条件RT</span>
+            </div>
+          </div>
+          <p style="font-size:12px; color:#6B7280; margin-top:8px;">切换成本 = 切换条件RT − 重复条件RT。值越大说明认知灵活性越弱。</p>
+        `;
+      } else if (isMemoryMatrix) {
+        metricsDiv.style.display = 'block';
+        metricsDiv.innerHTML = `
+          <h3 style="font-size:15px; font-weight:600; margin-bottom:12px; color:#1F2937;">🧩 记忆表现</h3>
+          <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+            <div class="stat-box" style="background:#F0FDF4;">
+              <span class="number" style="color:#15803D;">${summary.totalHits || '--'}</span>
+              <span class="label">总命中</span>
+            </div>
+            <div class="stat-box" style="background:#FEF2F2;">
+              <span class="number" style="color:#DC2626;">${summary.totalMisses || '--'}</span>
+              <span class="label">总遗漏</span>
+            </div>
+            <div class="stat-box" style="background:#FFFBEB;">
+              <span class="number" style="color:#D97706;">${summary.totalFalseAlarms || '--'}</span>
+              <span class="label">误点</span>
+            </div>
+          </div>
+        `;
+      } else {
+        metricsDiv.style.display = 'none';
+      }
+    }
+
+    function exportData() {
+      const data = localStorage.getItem('brainGameResults') || '{}';
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `brain-training-results-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    loadResults();
+  </script>
+  <script src="js/core/history.js"></script>
+  <script>
+    // 历史数据渲染（在 history.js 加载后执行）
+    function renderHistory() {
+      const data = JSON.parse(localStorage.getItem('brainGameResults') || '{}');
+      if (!data.gameType || !window.BrainHistory) return;
+
+      const history = window.BrainHistory.getByGame(data.gameType, 10);
+      const lastRecord = window.BrainHistory.getLast(data.gameType);
+      const bestRecord = window.BrainHistory.getBest(data.gameType, 'score');
+
+      const currentScore = parseInt(document.getElementById('score').textContent) || 0;
+      const currentAccuracy = parseInt((document.getElementById('accuracy').textContent || '').replace('%', '')) || 0;
+      const currentRT = parseInt((document.getElementById('avg-rt').textContent || '').replace('ms', '')) || 0;
+
+      // 对比卡片
+      if (lastRecord) {
+        const comparisonCard = document.getElementById('comparison-card');
+        comparisonCard.style.display = 'block';
+
+        const scoreDelta = currentScore - lastRecord.score;
+        const accDelta = currentAccuracy - lastRecord.accuracy;
+        const rtDelta = currentRT - lastRecord.avgRT;
+
+        document.getElementById('cmp-score').textContent = currentScore;
+        document.getElementById('cmp-score-delta').textContent = formatDelta(scoreDelta, '分');
+        document.getElementById('cmp-score-delta').className = 'sub-label ' + (scoreDelta > 0 ? 'delta-positive' : scoreDelta < 0 ? 'delta-negative' : 'delta-neutral');
+
+        document.getElementById('cmp-accuracy').textContent = currentAccuracy + '%';
+        document.getElementById('cmp-accuracy-delta').textContent = formatDelta(accDelta, '%', true);
+        document.getElementById('cmp-accuracy-delta').className = 'sub-label ' + (accDelta > 0 ? 'delta-positive' : accDelta < 0 ? 'delta-negative' : 'delta-neutral');
+
+        document.getElementById('cmp-rt').textContent = currentRT + 'ms';
+        document.getElementById('cmp-rt-delta').textContent = formatDelta(rtDelta, 'ms', true, true); // RT 越低越好
+        document.getElementById('cmp-rt-delta').className = 'sub-label ' + (rtDelta < 0 ? 'delta-positive' : rtDelta > 0 ? 'delta-negative' : 'delta-neutral');
+      }
+
+      if (bestRecord) {
+        document.getElementById('cmp-best').textContent = bestRecord.score;
+        document.getElementById('cmp-best-date').textContent = bestRecord.date;
+      }
+
+      // 趋势图
+      if (history.length >= 2) {
+        const trendCard = document.getElementById('trend-card');
+        trendCard.style.display = 'block';
+
+        const scores = history.map(r => r.score).reverse();
+        const accuracies = history.map(r => r.accuracy).reverse();
+        const rts = history.map(r => r.avgRT).reverse();
+        const dates = history.map(r => r.date.slice(5)).reverse(); // MM-DD
+
+        const maxScore = Math.max(...scores, 1);
+        const maxAcc = 100;
+        const maxRT = Math.max(...rts, 1);
+
+        document.getElementById('trend-chart').innerHTML = dates.map((d, i) => `
+          <div class="trend-col">
+            <div class="trend-bars">
+              <div class="trend-bar score" style="height:${(scores[i]/maxScore*100)}px;"></div>
+              <div class="trend-bar accuracy" style="height:${(accuracies[i]/maxAcc*100)}px;"></div>
+              <div class="trend-bar rt" style="height:${(rts[i]/maxRT*60)}px;"></div>
+            </div>
+            <span class="trend-date">${d}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    function formatDelta(delta, unit, reverseColors, isRT) {
+      if (delta === 0) return '持平';
+      const arrow = delta > 0 ? '↑' : '↓';
+      const abs = Math.abs(delta);
+      if (isRT) {
+        return delta < 0 ? `快 ${abs}${unit} ${arrow}` : `慢 ${abs}${unit} ${arrow}`;
+      }
+      return `${arrow} ${abs}${unit}`;
+    }
+
+    // 页面加载后渲染历史数据
+    document.addEventListener('DOMContentLoaded', renderHistory);
+  </script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+{"action":"evaluate","args":{"code":"fetch('http://127.0.0.1:3000/test-history.js').then(r=>r.text()).then(t=>eval(t))"},"session":"history-verify"}

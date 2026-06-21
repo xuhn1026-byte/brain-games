@@ -1,0 +1,1 @@
+{"action":"evaluate","args":{"code":"(()=>{const btns=document.querySelectorAll('button');return [...btns].map(b=>({text:b.textContent.trim(),className:b.className,id:b.id})).filter(b=>b.text.includes('Save')||b.text.includes('Branch')||b.text.includes('Deploy'))})()"}}
