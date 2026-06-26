@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>数据后台 - 脑力训练</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/auth.css">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/xlsx.full.min.js"></script>
+  <style>
+    .admin-body { background: #f5f5f5; min-height: 100vh; }
+    .admin-header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #fff;
+      padding: 30px 24px;
+      text-align: center;
+    }
+    .admin-header h1 { margin: 0 0 8px; font-size: 26px; }
+    .admin-header p { margin: 0; opacity: 0.85; font-size: 14px; }
+    .admin-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .admin-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .admin-card h2 {
+      margin: 0 0 16px;
+      font-size: 18px;
+      color: #1f2937;
+    }
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      align-items: end;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 6px; }
+    .filter-group label { font-size: 13px; color: #6b7280; }
+    .filter-group select,
+    .filter-group input {
+      padding: 10px 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .btn-admin {
+      background: #0D7377;
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .btn-admin:hover { background: #0a5c5f; }
+    .btn-export-excel {
+      background: #10B981;
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .btn-export-excel:hover { background: #059669; }
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    .admin-table th,
+    .admin-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .admin-table th {
+      background: #f9fafb;
+      color: #4b5563;
+      font-weight: 600;
+    }
+    .admin-table tr:hover { background: #f9fafb; }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .badge-blue { background: #e0f2fe; color: #0369a1; }
+    .badge-green { background: #d1fae5; color: #059669; }
+    .badge-purple { background: #f3e8ff; color: #7c3aed; }
+    .action-btns { display: flex; gap: 8px; }
+    .btn-small {
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: none;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .btn-view { background: #e0f2fe; color: #0369a1; }
+    .btn-delete { background: #fee2e2; color: #dc2626; }
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #9ca3af;
+    }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 20px;
+    }
+    .modal-large {
+      background: #fff;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 900px;
+      max-height: 90vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #6b7280;
+    }
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .stat-item2 {
+      background: #f9fafb;
+      padding: 14px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    .stat-item2 .num { font-size: 22px; font-weight: 700; color: #0D7377; }
+    .stat-item2 .label { font-size: 12px; color: #6b7280; margin-top: 4px; }
+  </style>
+</head>
+<body class="admin-body">
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <div class="logo">
+        <span class="emoji">🧠</span>
+        <a href="index.html"><span>脑力训练</span></a>
+      </div>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">首页</a>
+        <a href="dashboard.html" class="nav-link">📊 看板</a>
+        <a href="admin.html?admin=1" class="nav-link active">⚙️ 数据后台</a>
+      </div>
+      <div id="user-pill-container"></div>
+    </div>
+  </nav>
+
+  <div class="admin-header">
+    <h1>⚙️ 数据管理后台</h1>
+    <p>查看训练记录、筛选数据、导出 Excel</p>
+  </div>
+
+  <div class="admin-container">
+    <!-- 统计卡片 -->
+    <div class="stats-row" id="admin-stats">
+      <div class="stat-item2"><div class="num" id="stat-users">0</div><div class="label">用户数量</div></div>
+      <div class="stat-item2"><div class="num" id="stat-sessions">0</div><div class="label">训练次数</div></div>
+      <div class="stat-item2"><div class="num" id="stat-trials">0</div><div class="label">试次总数</div></div>
+    </div>
+
+    <!-- 用户列表 -->
+    <div class="admin-card">
+      <h2>👤 用户列表</h2>
+      <div id="users-table-container"></div>
+    </div>
+
+    <!-- 筛选器 -->
+    <div class="admin-card">
+      <h2>🔍 训练记录筛选</h2>
+      <div class="filters">
+        <div class="filter-group">
+          <label>用户</label>
+          <select id="filter-user"><option value="">全部用户</option></select>
+        </div>
+        <div class="filter-group">
+          <label>游戏类型</label>
+          <select id="filter-game">
+            <option value="">全部游戏</option>
+            <option value="memory_matrix">记忆矩阵</option>
+            <option value="memory_match">符号配对</option>
+            <option value="speed_match">快速匹配</option>
+            <option value="color_shape">颜色形状</option>
+            <option value="flanker_bird">飞鸟注意力</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>开始日期</label>
+          <input type="date" id="filter-date-from">
+        </div>
+        <div class="filter-group">
+          <label>结束日期</label>
+          <input type="date" id="filter-date-to">
+        </div>
+        <div class="filter-group">
+          <button class="btn-admin" onclick="loadSessions()">查询</button>
+        </div>
+        <div class="filter-group">
+          <button class="btn-export-excel" onclick="exportExcel()">📊 导出 Excel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 会话列表 -->
+    <div class="admin-card">
+      <h2>📝 训练记录</h2>
+      <div id="sessions-table-container">
+        <div class="empty-state">点击「查询」加载数据</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 试次明细弹窗 -->
+  <div id="trials-modal" class="modal-overlay">
+    <div class="modal-large">
+      <div class="modal-header">
+        <h3 id="trials-modal-title">试次明细</h3>
+        <button class="close-btn" onclick="closeTrialsModal()">×</button>
+      </div>
+      <div class="modal-body" id="trials-modal-body"></div>
+    </div>
+  </div>
+
+  <script src="js/core/api.js"></script>
+  <script src="js/core/auth.js"></script>
+  <script>
+    let allUsers = [];
+    let currentSessions = [];
+    let currentTrialsMap = {};
+
+    const GAME_NAMES = {
+      memory_matrix: '记忆矩阵',
+      memory_match: '符号配对',
+      speed_match: '快速匹配',
+      color_shape: '颜色形状',
+      flanker_bird: '飞鸟注意力'
+    };
+
+    async function initAdmin() {
+      BrainAuth.renderUserPill(document.getElementById('user-pill-container'));
+      await loadUsers();
+      await loadStats();
+      await loadSessions();
+    }
+
+    async function loadUsers() {
+      try {
+        allUsers = await BrainAPI.getUsers();
+        renderUsers(allUsers);
+        const select = document.getElementById('filter-user');
+        select.innerHTML = '<option value="">全部用户</option>';
+        allUsers.forEach(u => {
+          const opt = document.createElement('option');
+          opt.value = u.id;
+          opt.textContent = `${u.name} (${u.totalSessions || 0}次)`;
+          select.appendChild(opt);
+        });
+      } catch (err) {
+        document.getElementById('users-table-container').innerHTML = `<div class="empty-state">加载失败：${err.message}</div>`;
+      }
+    }
+
+    function renderUsers(users) {
+      const container = document.getElementById('users-table-container');
+      if (!users.length) {
+        container.innerHTML = '<div class="empty-state">暂无用户</div>';
+        return;
+      }
+      container.innerHTML = `
+        <table class="admin-table">
+          <thead>
+            <tr><th>ID</th><th>姓名</th><th>训练次数</th><th>最近训练</th><th>注册时间</th></tr>
+          </thead>
+          <tbody>
+            ${users.map(u => `
+              <tr>
+                <td>${u.id}</td>
+                <td>${u.name}</td>
+                <td><span class="badge badge-blue">${u.totalSessions || 0}</span></td>
+                <td>${u.lastSessionAt ? formatDate(u.lastSessionAt) : '-'}</td>
+                <td>${formatDate(u.createdAt)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    async function loadStats() {
+      try {
+        const users = await BrainAPI.getUsers();
+        const sessions = await BrainAPI.getSessions({});
+        let trials = 0;
+        for (const s of sessions.slice(0, 50)) {
+          const ts = await BrainAPI.getTrials(s.id);
+          trials += ts.length;
+        }
+        document.getElementById('stat-users').textContent = users.length;
+        document.getElementById('stat-sessions').textContent = sessions.length;
+        document.getElementById('stat-trials').textContent = trials;
+      } catch (err) {
+        console.error('加载统计失败:', err);
+      }
+    }
+
+    async function loadSessions() {
+      const params = {};
+      const userId = document.getElementById('filter-user').value;
+      const gameType = document.getElementById('filter-game').value;
+      const dateFrom = document.getElementById('filter-date-from').value;
+      const dateTo = document.getElementById('filter-date-to').value;
+      if (userId) params.userId = userId;
+      if (gameType) params.gameType = gameType;
+      if (dateFrom) params.dateFrom = dateFrom;
+      if (dateTo) params.dateTo = dateTo;
+
+      const container = document.getElementById('sessions-table-container');
+      container.innerHTML = '<div class="empty-state">加载中...</div>';
+
+      try {
+        currentSessions = await BrainAPI.getSessions(params);
+        currentTrialsMap = {};
+        renderSessions(currentSessions);
+      } catch (err) {
+        container.innerHTML = `<div class="empty-state">加载失败：${err.message}</div>`;
+      }
+    }
+
+    function renderSessions(sessions) {
+      const container = document.getElementById('sessions-table-container');
+      if (!sessions.length) {
+        container.innerHTML = '<div class="empty-state">没有找到记录</div>';
+        return;
+      }
+      container.innerHTML = `
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>ID</th><th>用户</th><th>游戏</th>
+              <th>日期</th><th>得分</th><th>正确率</th>
+              <th>平均RT</th><th>轮数</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${sessions.map(s => `
+              <tr>
+                <td>${s.id}</td>
+                <td>${s.userName}</td>
+                <td><span class="badge badge-purple">${GAME_NAMES[s.gameType] || s.gameType}</span></td>
+                <td>${formatDate(s.timestamp)}</td>
+                <td><strong>${s.score}</strong></td>
+                <td>${Math.round(s.avgAccuracy)}%</td>
+                <td>${Math.round(s.avgRT)}ms</td>
+                <td>${s.completedRounds}/${s.totalRounds}</td>
+                <td>
+                  <div class="action-btns">
+                    <button class="btn-small btn-view" onclick="viewTrials(${s.id})">明细</button>
+                    <button class="btn-small btn-delete" onclick="deleteSession(${s.id})">删除</button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    async function viewTrials(sessionId) {
+      try {
+        let trials = currentTrialsMap[sessionId];
+        if (!trials) {
+          trials = await BrainAPI.getTrials(sessionId);
+          currentTrialsMap[sessionId] = trials;
+        }
+        const session = currentSessions.find(s => s.id === sessionId);
+        document.getElementById('trials-modal-title').textContent =
+          `${session?.userName || ''} - ${GAME_NAMES[session?.gameType] || session?.gameType} - 试次明细 (${trials.length})`;
+
+        const body = document.getElementById('trials-modal-body');
+        if (!trials.length) {
+          body.innerHTML = '<div class="empty-state">暂无试次明细</div>';
+        } else {
+          body.innerHTML = `
+            <table class="admin-table">
+              <thead>
+                <tr><th>轮次</th><th>刺激</th><th>反应</th>
+                <th>结果</th><th>RT(ms)</th><th>条件</th></tr>
+              </thead>
+              <tbody>
+                ${trials.map(t => `
+                  <tr>
+                    <td>${t.round}</td>
+                    <td>${t.stimulus || '-'}</td>
+                    <td>${t.response || '-'}</td>
+                    <td>${t.correct ? '<span class="badge badge-green">正确</span>' : '<span class="badge" style="background:#fee2e2;color:#dc2626">错误</span>'}</td>
+                    <td>${Math.round(t.rt)}</td>
+                    <td>${t.condition || '-'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `;
+        }
+        document.getElementById('trials-modal').style.display = 'flex';
+      } catch (err) {
+        alert('加载明细失败：' + err.message);
+      }
+    }
+
+    function closeTrialsModal() {
+      document.getElementById('trials-modal').style.display = 'none';
+    }
+
+    async function deleteSession(id) {
+      if (!confirm('确定删除这条训练记录吗？')) return;
+      try {
+        await BrainAPI.deleteSession(id);
+        await loadSessions();
+        await loadStats();
+      } catch (err) {
+        alert('删除失败：' + err.message);
+      }
+    }
+
+    async function exportExcel() {
+      if (!currentSessions.length) {
+        alert('没有可导出的数据，请先查询');
+        return;
+      }
+
+      const sessionsRows = currentSessions.map(s => ({
+        '会话ID': s.id,
+        '用户ID': s.userId,
+        '用户姓名': s.userName,
+        '游戏类型': GAME_NAMES[s.gameType] || s.gameType,
+        '日期': s.date,
+        '时间': s.timestamp,
+        '总轮数': s.totalRounds,
+        '完成轮数': s.completedRounds,
+        '得分': s.score,
+        '正确率(%)': Math.round(s.avgAccuracy * 100) / 100,
+        '平均RT(ms)': Math.round(s.avgRT * 100) / 100,
+        ...flattenObject(s.summary || {}, 'summary_')
+      }));
+
+      // 加载所有 trials
+      const trialsRows = [];
+      for (const s of currentSessions) {
+        let trials = currentTrialsMap[s.id];
+        if (!trials) {
+          trials = await BrainAPI.getTrials(s.id);
+          currentTrialsMap[s.id] = trials;
+        }
+        for (const t of trials) {
+          trialsRows.push({
+            '会话ID': t.sessionId,
+            '用户ID': t.userId,
+            '用户姓名': t.userName,
+            '游戏类型': GAME_NAMES[t.gameType] || t.gameType,
+            '轮次': t.round,
+            '反应时间(ms)': Math.round(t.rt * 100) / 100,
+            '是否正确': t.correct ? '是' : '否',
+            '反应': t.response,
+            '刺激': t.stimulus,
+            '条件': t.condition,
+            '时间': t.timestamp,
+            ...flattenObject(t.extra || {}, 'extra_')
+          });
+        }
+      }
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sessionsRows), '训练汇总');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(trialsRows), '试次明细');
+      XLSX.writeFile(wb, `brain-games-data-${new Date().toISOString().slice(0,10)}.xlsx`);
+    }
+
+    function flattenObject(obj, prefix) {
+      const result = {};
+      for (const [key, value] of Object.entries(obj)) {
+        if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+          Object.assign(result, flattenObject(value, prefix + key + '_'));
+        } else {
+          result[prefix + key] = Array.isArray(value) ? JSON.stringify(value) : value;
+        }
+      }
+      return result;
+    }
+
+    function formatDate(iso) {
+      if (!iso) return '-';
+      const d = new Date(iso);
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    }
+
+    // 简单的 admin 访问控制：通过 URL 参数 ?admin=1 进入
+    const isAdmin = new URLSearchParams(window.location.search).get('admin') === '1';
+    if (!isAdmin) {
+      document.body.innerHTML = '<div style="text-align:center;padding:80px 24px;"><h2>访问受限</h2><p>请在地址栏添加 ?admin=1 访问后台</p><a href="index.html">返回首页</a></div>';
+    } else {
+      initAdmin();
+    }
+  </script>
+</body>
+</html>

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>游戏 - 脑力训练</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/auth.css">
   <style>
     .game-page {
       background: #F5F5F0;
@@ -120,6 +121,7 @@
       <span class="game-title-header" id="game-title">记忆矩阵</span>
     </div>
     <div class="game-info-badge" id="game-badge">空间工作记忆</div>
+    <div id="user-pill-container"></div>
   </header>
 
   <!-- 游戏主体 -->
@@ -152,6 +154,8 @@
   </main>
 
   <script src="js/data.js"></script>
+  <script src="js/core/api.js"></script>
+  <script src="js/core/auth.js"></script>
   <script src="js/core/history.js"></script>
   <script>
     // 获取游戏ID
@@ -253,6 +257,24 @@
     }
     
     function startGame() {
+      if (!BrainAuth.isLoggedIn()) {
+        const name = prompt('请先输入姓名开始训练：');
+        if (!name) return;
+        const pin = prompt('请输入 4 位数字 PIN：');
+        if (!/^\d{4}$/.test(pin || '')) {
+          alert('PIN 必须是 4 位数字');
+          return;
+        }
+        BrainAuth.login(name.trim(), pin).then(() => {
+          BrainAuth.renderUserPill(document.getElementById('user-pill-container'));
+          startGameInternal();
+        }).catch(err => alert(err.message || '登录失败'));
+        return;
+      }
+      startGameInternal();
+    }
+
+    function startGameInternal() {
       document.getElementById('game-intro').style.display = 'none';
       document.getElementById('canvas-container').style.display = 'block';
       document.getElementById('instruction-overlay').style.display = 'flex';
@@ -312,7 +334,8 @@
     
     // 初始化
     initGame().catch(err => console.error('加载游戏失败:', err));
-    
+    BrainAuth.renderUserPill(document.getElementById('user-pill-container'));
+
     // 更新进度显示
     setInterval(() => {
       if (!game || game.state === 'idle' || game.state === 'ended') return;

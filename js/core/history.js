@@ -7,6 +7,123 @@ const HISTORY_KEY = 'brainGameHistory';
 const MAX_RECORDS = 50; // 每款游戏最多保留50条记录
 
 /**
+ * 将游戏日志转换为后端统一的 trials 格式
+ */
+function convertLogsToTrials(result) {
+  const gameType = result.gameType;
+  const logs = result.logs || [];
+
+  return logs.map((log, idx) => {
+    const round = log.round || idx + 1;
+    let rt = log.rt || 0;
+    let correct = log.correct ? 1 : 0;
+    let response = log.response || '';
+    let stimulus = log.stimulus || '';
+    let condition = log.condition || '';
+    let extra = {};
+
+    if (gameType === 'memory_matrix') {
+      const firstClick = (log.clicks || [])[0];
+      rt = firstClick ? firstClick.rt : (log.totalRecallTime || 0);
+      correct = (log.accuracy || 0) >= 0.7 ? 1 : 0;
+      response = `点击${(log.clicks || []).length}次`;
+      stimulus = `${log.gridSize || 3}×${log.gridSize || 3}网格, ${log.targetCount || 0}个目标`;
+      condition = log.difficulty || 'medium';
+      extra = {
+        hits: log.hits || 0,
+        misses: log.misses || 0,
+        falseAlarms: log.falseAlarms || 0,
+        targetCount: log.targetCount || 0,
+        gridSize: log.gridSize || 3,
+        totalRecallTime: log.totalRecallTime || 0
+      };
+    } else if (gameType === 'flanker_bird') {
+      rt = log.rt || 0;
+      correct = log.correct ? 1 : 0;
+      response = log.response || '';
+      stimulus = `${(log.flankerCount || 0) * 2 + 1}箭头`;
+      condition = log.isNeutral ? 'neutral' : (log.isCongruent ? 'congruent' : 'incongruent');
+      extra = {
+        targetDirection: log.targetDirection || '',
+        flankerCount: log.flankerCount || 0
+      };
+    } else if (gameType === 'speed_match') {
+      rt = log.rt || 0;
+      correct = log.correct ? 1 : 0;
+      response = log.response || '';
+      stimulus = log.symbol || '';
+      condition = log.isSame ? 'same' : 'different';
+      extra = { symbolSet: log.symbolSet || 'shapes' };
+    } else if (gameType === 'memory_match') {
+      rt = log.rt || 0;
+      correct = log.correct ? 1 : 0;
+      response = log.response || '';
+      stimulus = log.targetSymbol || '';
+      condition = log.isMatch ? 'match' : 'noMatch';
+      extra = {
+        sequenceLength: log.sequenceLength || 0,
+        nBack: log.nBack || 0
+      };
+    } else if (gameType === 'color_shape') {
+      rt = log.rt || 0;
+      correct = log.correct ? 1 : 0;
+      response = log.response || '';
+      stimulus = `${log.targetColor || ''}${log.targetShape || ''}`;
+      condition = `${log.rule || ''},${log.isSwitch ? 'switch' : 'repeat'}`;
+      extra = {
+        rule: log.rule || '',
+        isSwitch: !!log.isSwitch
+      };
+    } else {
+      // 通用 fallback
+      extra = { raw: log };
+    }
+
+    return {
+      round,
+      rt,
+      correct,
+      response,
+      stimulus,
+      condition,
+      extra,
+      timestamp: log.timestamp || result.timestamp || new Date().toISOString()
+    };
+  });
+}
+
+/**
+ * 同步一次训练结果到后端
+ */
+async function syncToBackend(result) {
+  if (!window.BrainAuth || !window.BrainAPI) return;
+  const user = window.BrainAuth.getUser();
+  if (!user) return;
+
+  const summary = result.summary || {};
+  const payload = {
+    userId: user.id,
+    userName: user.name,
+    gameType: result.gameType,
+    gameName: result.gameName,
+    timestamp: result.timestamp || new Date().toISOString(),
+    totalRounds: result.totalRounds || 0,
+    completedRounds: result.completedRounds || 0,
+    score: result.score || 0,
+    avgAccuracy: summary.avgAccuracy || 0,
+    avgRT: summary.avgRT || summary.avgRecallTime || 0,
+    summary: summary,
+    trials: convertLogsToTrials(result)
+  };
+
+  try {
+    await window.BrainAPI.saveSession(payload);
+  } catch (err) {
+    console.error('同步到后端失败:', err);
+  }
+}
+
+/**
  * 添加一条测试结果到历史记录
  * @param {Object} result - 单次测试结果（gameType, gameName, score, accuracy, avgRT, summary, ...）
  */
@@ -38,6 +155,10 @@ function addHistoryRecord(result) {
   }
 
   localStorage.setItem(HISTORY_KEY, JSON.stringify(trimmed));
+
+  // 异步同步到后端（不阻塞本地保存）
+  syncToBackend(result);
+
   return record;
 }
 
@@ -192,5 +313,6 @@ window.BrainHistory = {
   getStats: getOverallStats,
   export: exportAllData,
   import: importAllData,
-  clear: clearHistory
+  clear: clearHistory,
+  syncToBackend: syncToBackend
 };

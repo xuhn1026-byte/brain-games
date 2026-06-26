@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>脑力训练 - 认知训练平台</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/auth.css">
 </head>
 <body>
   <!-- 导航栏 -->
@@ -22,8 +23,12 @@
         <a href="category.html?type=flexibility" class="nav-link">灵活性</a>
         <a href="dashboard.html" class="nav-link">📊 看板</a>
       </div>
+      <div id="user-pill-container"></div>
     </div>
   </nav>
+
+  <!-- 欢迎横幅 -->
+  <div id="welcome-banner" class="welcome-banner" style="display:none; max-width: 1200px; margin: 20px auto 0;"></div>
 
   <!-- Hero 区域 -->
   <section class="hero">
@@ -64,7 +69,30 @@
     <p>脑力训练 - 基于认知神经科学的脑力训练平台</p>
   </footer>
 
+  <!-- 登录弹窗 -->
+  <div id="login-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <h2>开始训练</h2>
+      <p>请输入姓名和 4 位数字 PIN，系统将自动记录训练数据。</p>
+      <div class="form-group">
+        <label for="login-name">姓名</label>
+        <input type="text" id="login-name" placeholder="例如：张三" maxlength="20">
+      </div>
+      <div class="form-group">
+        <label for="login-pin">PIN 码（4 位数字）</label>
+        <input type="password" id="login-pin" placeholder="1234" maxlength="4" inputmode="numeric">
+      </div>
+      <div class="form-error" id="login-error"></div>
+      <div class="form-actions">
+        <button class="btn-secondary-modal" type="button" onclick="BrainAuth.hideLoginModal()">取消</button>
+        <button class="btn-primary-modal" type="button" onclick="handleLogin()">开始训练</button>
+      </div>
+    </div>
+  </div>
+
   <script src="js/data.js"></script>
+  <script src="js/core/api.js"></script>
+  <script src="js/core/auth.js"></script>
   <script>
     // 渲染 7 分类卡片
     function renderCategories() {
@@ -99,8 +127,54 @@
     function scrollToCategories() {
       document.getElementById('categories-section').scrollIntoView({ behavior: 'smooth' });
     }
-    
-    renderCategories();
+
+    async function handleLogin() {
+      const name = document.getElementById('login-name').value.trim();
+      const pin = document.getElementById('login-pin').value.trim();
+      const errorEl = document.getElementById('login-error');
+      errorEl.textContent = '';
+
+      if (!name) {
+        errorEl.textContent = '请输入姓名';
+        return;
+      }
+      if (!/^\d{4}$/.test(pin)) {
+        errorEl.textContent = 'PIN 必须是 4 位数字';
+        return;
+      }
+
+      try {
+        await BrainAuth.login(name, pin);
+        initPage();
+        BrainAuth.hideLoginModal();
+      } catch (err) {
+        errorEl.textContent = err.message || '登录失败';
+      }
+    }
+
+    function initPage() {
+      BrainAuth.renderUserPill(document.getElementById('user-pill-container'));
+      const user = BrainAuth.getUser();
+      const banner = document.getElementById('welcome-banner');
+      if (user && banner) {
+        banner.textContent = `欢迎回来，${user.name}！请选择下面的训练项目。`;
+        banner.style.display = 'block';
+      }
+      renderCategories();
+    }
+
+    document.getElementById('login-pin').addEventListener('input', function(e) {
+      e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
+    });
+
+    document.getElementById('login-pin').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') handleLogin();
+    });
+
+    initPage();
+    if (!BrainAuth.isLoggedIn()) {
+      BrainAuth.showLoginModal();
+    }
   </script>
 </body>
 </html>

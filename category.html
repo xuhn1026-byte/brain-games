@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>游戏分类 - 脑力训练</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/auth.css">
 </head>
 <body>
   <!-- 导航栏 -->
@@ -22,6 +23,7 @@
         <a href="category.html?type=flexibility" class="nav-link" data-nav="flexibility">灵活性</a>
         <a href="dashboard.html" class="nav-link">📊 看板</a>
       </div>
+      <div id="user-pill-container"></div>
     </div>
   </nav>
 
@@ -36,6 +38,8 @@
   </footer>
 
   <script src="js/data.js"></script>
+  <script src="js/core/api.js"></script>
+  <script src="js/core/auth.js"></script>
   <script>
     // 获取 URL 参数
     function getParam(name) {
@@ -132,6 +136,8 @@
     document.querySelectorAll('.nav-link[data-nav]').forEach(link => {
       if (link.dataset.nav === type) link.classList.add('active');
     });
+
+    BrainAuth.renderUserPill(document.getElementById('user-pill-container'));
   </script>
 </body>
 </html>
