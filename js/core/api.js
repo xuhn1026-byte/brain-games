@@ -1,9 +1,10 @@
 /**
  * Brain Games Backend API Client
- * 本地开发默认调用 http://127.0.0.1:3001
- * 部署到腾讯云 CloudBase 后，把下面的地址改成云函数地址
+ * 优先读取 js/core/config.js 中的 API_BASE
  */
-const API_BASE = window.__BRAIN_API_BASE__ || 'http://127.0.0.1:3001';
+const API_BASE = (window.__BRAIN_CONFIG__ && window.__BRAIN_CONFIG__.API_BASE)
+  || window.__BRAIN_API_BASE__
+  || 'http://127.0.0.1:3001';
 
 const api = {
   base: API_BASE,

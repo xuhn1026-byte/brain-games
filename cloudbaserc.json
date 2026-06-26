@@ -1,0 +1,25 @@
+{
+  "envId": "你的CloudBase环境ID",
+  "functionRoot": "./backend",
+  "functions": [
+    {
+      "name": "brain-games-api",
+      "config": {
+        "timeout": 20,
+        "memorySize": 256,
+        "runtime": "Nodejs16.13",
+        "handler": "index.main"
+      },
+      "triggers": [
+        {
+          "name": "api",
+          "type": "http",
+          "config": {
+            "path": "/",
+            "methods": ["GET", "POST", "DELETE", "OPTIONS"]
+          }
+        }
+      ]
+    }
+  ]
+}
